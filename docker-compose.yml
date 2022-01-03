@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  django:
+    depends_on:
+      - db
+    build: .
+    command: sh -c "gunicorn --bind 0.0.0.0:8000 stocks_products.wsgi"
+    volumes:
+      - .:/project
+      - static_data:/static_data
+    ports:
+      - "8000:8000"
+  db:
+    image: postgres:13
+    restart: always
+    command: sh -c "python manage.py migrate"
+    volumes:
+      - pg_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=stocks_products
+    ports:
+      - "5432:5432"
+
+  nginx:
+    image: nginx:1.19-alpine
+    depends_on:
+      - django
+    ports:
+      - "80:80"
+    volumes:
+      - static_data:/var/www/html/static
+      - /nginx-conf.d:/etc/nginx/conf.d
+volumes:
+  pg_data:
+  static_data:
